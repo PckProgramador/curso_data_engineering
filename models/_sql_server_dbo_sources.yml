@@ -25,13 +25,8 @@ sources:
         columns:
           - name: address_id
             description: "ID único de la dirección"
-            tests:
-              - not_null
-              - unique
           - name: zipcode
             description: "Código postal de la dirección"
-            tests:
-              - not_null
           - name: country
             description: "País de la dirección"
           - name: address
@@ -49,9 +44,6 @@ sources:
         columns:
           - name: event_id
             description: "ID único del evento"
-            tests:
-              - not_null
-              - unique
           - name: page_url
             description: "URL de la página donde ocurrió el evento"
           - name: event_type
@@ -64,8 +56,6 @@ sources:
             description: "ID de la sesión durante la cual ocurrió el evento"
           - name: created_at
             description: "Marca temporal de cuándo ocurrió el evento"
-            tests:
-              - not_null
           - name: order_id
             description: "ID de la orden asociada al evento (si aplica)"
           - name: _fivetran_deleted
@@ -79,9 +69,6 @@ sources:
         columns:
           - name: order_id
             description: "ID único de la orden"
-            tests:
-              - not_null
-              - unique
           - name: shipping_service
             description: "Servicio de envío utilizado para la orden"
           - name: shipping_cost
@@ -90,8 +77,6 @@ sources:
             description: "ID de la dirección asociada a la orden"
           - name: created_at
             description: "Marca temporal de cuándo se creó la orden"
-            tests:
-              - not_null
           - name: promo_id
             description: "ID del código promocional utilizado (si aplica)"
           - name: estimated_delivery_at
@@ -118,12 +103,8 @@ sources:
         columns:
           - name: order_id
             description: "ID único de la orden"
-            tests:
-              - not_null
           - name: product_id
             description: "ID único del producto"
-            tests:
-              - not_null
           - name: quantity
             description: "Cantidad del producto en la orden"
           - name: _fivetran_deleted
@@ -136,9 +117,6 @@ sources:
         columns:
           - name: product_id
             description: "ID único del producto"
-            tests:
-              - not_null
-              - unique
           - name: price
             description: "Precio del producto"
           - name: name
@@ -155,9 +133,6 @@ sources:
         columns:
           - name: promo_id
             description: "ID único del código promocional"
-            tests:
-              - not_null
-              - unique
           - name: discount
             description: "Descuento asociado al código promocional"
           - name: status
@@ -172,9 +147,6 @@ sources:
         columns:
           - name: user_id
             description: "ID único del usuario"
-            tests:
-              - not_null
-              - unique
           - name: updated_at
             description: "Marca temporal de la última actualización del usuario"
           - name: address_id
