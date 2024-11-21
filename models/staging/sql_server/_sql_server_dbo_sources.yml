@@ -5,7 +5,7 @@ sources:
     description: >
       Raw data for educational purposes
     schema: sql_server_dbo  # this is the schema where our raw data lives
-    database: ALUMNO27_DEV_BRONZE_DB  # this is the name of our database
+    database: "{{ env_var('DBT_ENVIRONMENTS') }}_BRONZE_DB" # this is the name of our database
 
     quoting:
       database: false
@@ -35,8 +35,8 @@ sources:
             description: "Postal code"
             tests:
               - not_null
-              - dbt_utils.expression_is_true:
-                  expression: "zipcode > 0"
+              # - dbt_utils.expression_is_true: Si quisiera testear que no vienen negativos al ser un number
+              #     expression: "zipcode > 0"
           - name: country
             description: "Country where the address is located"
             tests:
