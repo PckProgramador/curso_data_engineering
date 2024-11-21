@@ -1,0 +1,214 @@
+version: 2
+
+sources:
+  - name: sql_server_dbo  # name of the source
+    description: >
+      Raw data for educational purposes
+    schema: sql_server_dbo  # this is the schema where our raw data lives
+    database: "{{ env_var('DBT_ENVIRONMENTS') }}_BRONZE_DB" # this is the name of our database
+
+    quoting:
+      database: false
+      schema: false
+      identifier: false
+
+    freshness:
+      warn_after:
+        count: 24
+        period: hour
+      # error_after: 
+      #   count: 48
+      #   period: hour
+      # It makes no sense to test the freshness of test data from 25/10, as it was created solely for educational purposes
+
+    tables:
+      - name: addresses
+        loaded_at_field: _fivetran_synced
+        description: "Unique addresses from everywhere"
+        columns:
+          - name: address_id
+            description: "Unique address id"
+            tests:
+              - not_null
+              - unique
+          - name: zipcode
+            description: "Postal code"
+            tests:
+              - not_null
+              # - dbt_utils.expression_is_true: Si quisiera testear que no vienen negativos al ser un number
+              #     expression: "zipcode > 0"
+          - name: country
+            description: "Country where the address is located"
+            tests:
+              - not_null
+          - name: address
+            description: "Name of the physical location of the address"
+            tests:
+              - not_null
+          - name: state
+            description: "State where the address is located"
+            tests:
+              - not_null
+          - name: _fivetran_deleted
+            description: "Fivetran data which confirms if a row has been deleted"
+          - name: _fivetran_synced
+            description: "Temporal check that indicates the last time a row has been synced"
+            tests:
+              - not_null
+
+      - name: events
+        loaded_at_field: _fivetran_synced
+        description: "Relation between web clicks and products"
+        columns:
+          - name: event_id
+            description: "Unique id from the event"
+            tests:
+              - not_null
+              - unique
+          - name: page_url
+            description: "URL where the event has been registered"
+          - name: event_type
+            description: "Type of event (e.g., click, visualization, etc.)"
+          - name: user_id
+            description: "Unique id for each user"
+          - name: product_id
+            description: "Unique id for each product"
+          - name: session_id
+            description: "Unique identifier for the current session"
+          - name: created_at
+            description: "Timestamp when the event occurred"
+            tests:
+              - not_null
+          - name: order_id
+            description: "Order ID associated with the event (if applicable)"
+          - name: _fivetran_deleted
+            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
+          - name: _fivetran_synced
+            description: "Timestamp indicating the last sync with Fivetran"
+
+      - name: orders
+        loaded_at_field: _fivetran_synced
+        description: "Table that stores information about purchase orders."
+        columns:
+          - name: order_id
+            description: "Unique order ID"
+            tests:
+              - not_null
+              - unique
+          - name: shipping_service
+            description: "Shipping service used for the order"
+          - name: shipping_cost
+            description: "Shipping cost of the order"
+          - name: address_id
+            description: "Address ID associated with the order"
+          - name: created_at
+            description: "Timestamp of when the order was created"
+            tests:
+              - not_null
+          - name: promo_id
+            description: "Promo code ID used (if applicable)"
+          - name: estimated_delivery_at
+            description: "Estimated delivery date of the order"
+          - name: order_cost
+            description: "Cost of the order excluding taxes and shipping"
+          - name: user_id
+            description: "User ID who placed the order"
+          - name: order_total
+            description: "Total of the order (cost + taxes + shipping)"
+          - name: delivered_at
+            description: "Date when the order was delivered"
+          - name: tracking_id
+            description: "Shipping tracking ID"
+          - name: status
+            description: "Current order status (e.g., pending, completed, etc.)"
+          - name: _fivetran_deleted
+            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
+          - name: _fivetran_synced
+            description: "Timestamp indicating the last sync with Fivetran"
+
+      - name: order_items
+        loaded_at_field: _fivetran_synced
+        description: "Table that stores products associated with each order."
+        columns:
+          - name: order_id
+            description: "Unique order ID"
+            tests:
+              - not_null
+          - name: product_id
+            description: "Unique product ID"
+            tests:
+              - not_null
+          - name: quantity
+            description: "Quantity of the product in the order"
+          - name: _fivetran_deleted
+            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
+          - name: _fivetran_synced
+            description: "Timestamp indicating the last sync with Fivetran"
+
+      - name: products
+        loaded_at_field: _fivetran_synced
+        description: "Table that stores product information."
+        columns:
+          - name: product_id
+            description: "Unique product ID"
+            tests:
+              - not_null
+              - unique
+          - name: price
+            description: "Price of the product"
+          - name: name
+            description: "Name of the product"
+          - name: inventory
+            description: "Available inventory quantity for the product"
+          - name: _fivetran_deleted
+            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
+          - name: _fivetran_synced
+            description: "Timestamp indicating the last sync with Fivetran"
+
+      - name: promos
+        loaded_at_field: _fivetran_synced
+        description: "Table that stores information about promotional codes."
+        columns:
+          - name: promo_id
+            description: "Unique promo code ID"
+            tests:
+              - not_null
+              - unique
+          - name: discount
+            description: "Discount associated with the promo code"
+          - name: status
+            description: "Status of the promo code (active, inactive, etc.)"
+          - name: _fivetran_deleted
+            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
+          - name: _fivetran_synced
+            description: "Timestamp indicating the last sync with Fivetran"
+
+      - name: users
+        loaded_at_field: _fivetran_synced
+        description: "Table that stores information about users."
+        columns:
+          - name: user_id
+            description: "Unique user ID"
+            tests:
+              - not_null
+              - unique
+          - name: updated_at
+            description: "Timestamp of the last user update"
+          - name: address_id
+            description: "Address ID associated with the user"
+          - name: last_name
+            description: "User's last name"
+          - name: created_at
+            description: "Timestamp of when the user was created"
+          - name: phone_number
+            description: "User's phone number"
+          - name: total_orders
+            description: "Total number of orders placed by the user"
+          - name: first_name
+            description: "User's first name"
+          - name: email
+            description: "User's email address"
+          - name: _fivetran_deleted
+            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
+          - name: _fivetran_synced
+            description: "Timestamp indicating the last sync with Fivetran"
