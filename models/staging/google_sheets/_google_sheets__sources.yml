@@ -31,7 +31,6 @@ sources:
 
           - name: product_id
             description: "UUID of each unique product on the platform."
-
           - name: quantity
             description: "Number of units for each product per month."
           
