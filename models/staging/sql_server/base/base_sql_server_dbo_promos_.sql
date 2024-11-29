@@ -1,0 +1,34 @@
+{{ config(materialized='table') }}
+
+WITH t1 as(
+     SELECT 
+        *
+    FROM {{ source('sql_server_dbo', 'promos') }} 
+UNION ALL
+    SELECT -- Se agrega la promo 'no promo' que significa que no hay promoción , sin descuento
+    'no promo' AS promo_id, 
+    '0' AS discount,
+    'inactivo' AS status,
+    NULL AS _fivetran_deleted, 
+    CURRENT_TIMESTAMP AS _fivetran_synced 
+)
+
+,base AS (
+    SELECT 
+        *,
+        {{ dbt_utils.generate_surrogate_key(['promo_id']) }} AS promo_surr_key, 
+        promo_id AS promo_desc 
+    FROM t1
+)
+
+SELECT 
+    cast(promo_surr_key as varchar(36)) as promo_surr_key, 
+    cast(promo_desc as varchar(100)) as promo_desc,
+    cast(discount as number(10,2)) as discount,
+    status,
+    CASE
+    WHEN _FIVETRAN_DELETED is null then false
+    else true
+    END as _FIVETRAN_DELETED,
+    CONVERT_TIMEZONE('UTC', _FIVETRAN_SYNCED) AS _FIVETRAN_SYNCED_UTC
+FROM base
