@@ -5,7 +5,7 @@ WITH t1 as(
         *
     FROM {{ source('sql_server_dbo', 'promos') }} 
 UNION ALL
-    SELECT -- Se agrega la promo 'no promo' que significa que no hay promoción , sin descuento
+    SELECT
     'no promo' AS promo_id, 
     '0' AS discount,
     'inactivo' AS status,
@@ -17,13 +17,13 @@ UNION ALL
     SELECT 
         *,
         {{ dbt_utils.generate_surrogate_key(['promo_id']) }} AS promo_surr_key, 
-        promo_id AS promo_desc 
+        promo_id AS promo_name
     FROM t1
 )
 
 SELECT 
-    cast(promo_surr_key as varchar(36)) as promo_surr_key, 
-    cast(promo_desc as varchar(100)) as promo_desc,
+    cast(promo_surr_key as varchar(36)) as promo_id, 
+    cast(promo_desc as varchar(100)) as promo_name,
     cast(discount as number(10,2)) as discount,
     status,
     CASE

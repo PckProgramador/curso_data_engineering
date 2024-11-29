@@ -19,7 +19,7 @@
         cast(user_id as varchar(36)) as user_id,
         cast(order_total as number(10,2)) as order_total,
         CONVERT_TIMEZONE('UTC', delivered_at) AS delivered_at,
-        status,
+        status AS status_order,
         CASE
         WHEN _FIVETRAN_DELETED is null then false
         else true
