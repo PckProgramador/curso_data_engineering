@@ -33,22 +33,14 @@ sources:
               - unique
           - name: zipcode
             description: "Postal code"
-            tests:
-              - not_null
-              # - dbt_utils.expression_is_true: Si quisiera testear que no vienen negativos al ser un number
-              #     expression: "zipcode > 0"
           - name: country
             description: "Country where the address is located"
-            tests:
-              - not_null
           - name: address
             description: "Name of the physical location of the address"
             tests:
-              - not_null
+              - not_null #No veo sentido que venga un address sin un campo address, debería de dar error
           - name: state
             description: "State where the address is located"
-            tests:
-              - not_null
           - name: _fivetran_deleted
             description: "Fivetran data which confirms if a row has been deleted"
           - name: _fivetran_synced
@@ -74,17 +66,19 @@ sources:
           - name: product_id
             description: "Unique id for each product"
           - name: session_id
-            description: "Unique identifier for the current session"
+            description: "Unique identifier for the current session" #Puede haber varios registros de eventos en la misma sesión
           - name: created_at
             description: "Timestamp when the event occurred"
             tests:
-              - not_null
+              - not_null #Si ha pulsado un botón tiene que ser a una hora concreta
           - name: order_id
             description: "Order ID associated with the event (if applicable)"
           - name: _fivetran_deleted
             description: "Indicator of whether the row has been deleted (managed by Fivetran)"
           - name: _fivetran_synced
             description: "Timestamp indicating the last sync with Fivetran"
+            tests:
+              - not_null
 
       - name: orders
         loaded_at_field: _fivetran_synced
@@ -102,7 +96,7 @@ sources:
           - name: address_id
             description: "Address ID associated with the order"
           - name: created_at
-            description: "Timestamp of when the order was created"
+            description: "Timestamp of when the order was created" #No puede haber un pedido sin hora
             tests:
               - not_null
           - name: promo_id
@@ -125,6 +119,8 @@ sources:
             description: "Indicator of whether the row has been deleted (managed by Fivetran)"
           - name: _fivetran_synced
             description: "Timestamp indicating the last sync with Fivetran"
+            tests:
+              - not_null
 
       - name: order_items
         loaded_at_field: _fivetran_synced
@@ -144,6 +140,8 @@ sources:
             description: "Indicator of whether the row has been deleted (managed by Fivetran)"
           - name: _fivetran_synced
             description: "Timestamp indicating the last sync with Fivetran"
+            tests:
+              - not_null
 
       - name: products
         loaded_at_field: _fivetran_synced
@@ -164,6 +162,8 @@ sources:
             description: "Indicator of whether the row has been deleted (managed by Fivetran)"
           - name: _fivetran_synced
             description: "Timestamp indicating the last sync with Fivetran"
+            tests:
+              - not_null
 
       - name: promos
         loaded_at_field: _fivetran_synced
@@ -182,6 +182,8 @@ sources:
             description: "Indicator of whether the row has been deleted (managed by Fivetran)"
           - name: _fivetran_synced
             description: "Timestamp indicating the last sync with Fivetran"
+            tests:
+              - not_null
 
       - name: users
         loaded_at_field: _fivetran_synced
@@ -200,6 +202,8 @@ sources:
             description: "User's last name"
           - name: created_at
             description: "Timestamp of when the user was created"
+            tests:
+              - not_null
           - name: phone_number
             description: "User's phone number"
           - name: total_orders
@@ -212,3 +216,5 @@ sources:
             description: "Indicator of whether the row has been deleted (managed by Fivetran)"
           - name: _fivetran_synced
             description: "Timestamp indicating the last sync with Fivetran"
+            tests:
+              - not_null

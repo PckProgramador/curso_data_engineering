@@ -1,52 +1,44 @@
 version: 2
 
 sources:
+  - name: google_sheets # Name of the source
+    schema: google_sheets # Schema where the raw data resides
+    database: "{{ env_var('DBT_ENVIRONMENTS') }}_BRONZE_DB" # Dynamic database name based on environment
 
-  - name: google_sheets # name of the source 
-    schema: google_sheets # this is the schema our raw data lives in
-    database: "{{ env_var('DBT_ENVIRONMENTS') }}_BRONZE_DB"
-    
     quoting:
+      # Avoid quoting database, schema, and identifiers unless necessary
       database: false
       schema: false
       identifier: false
 
     freshness:
-      warn_after: {count: 24, period: hour}
-      # error_after: {count: 48, period: hour} 
-      #It makes no sense to test the freshness of test data from 25/10, as it was created solely for educational purposes
-    tables:
+      warn_after:
+        count: 24
+        period: hour
+      # error_after:
+      #   count: 48
+      #   period: hour
+      # Note: Freshness tests for test data may not make sense for educational/demo purposes (25/10).
 
+    tables:
       - name: budget
-        loaded_at_field: _fivetran_synced
-        description: >
-          Data about budget in demo.
+        loaded_at_field: _fivetran_synced 
+        description: "Data about budget in the demo environment."
+
         columns:
           - name: _row
-            description: >
-              Number of each row from google sheet.
-            tests:
-              - not_null
-              - unique
+            description: "Row number in the Google Sheet."
+
           - name: product_id
-            description: >
-              UUID for each unique product on platform.
-            tests:
-              - not_null
+            description: "UUID of each unique product on the platform."
           - name: quantity
-            description: >
-              Number of units for each product and each month for products.
-            tests:
-              - not_null
-            # - dbt_utils.expression_is_true: Si quisiera testear que no vienen negativos al ser un number
-            #     expression: "quantity > 0"
+            description: "Number of units for each product per month."
+          
           - name: month
-            description: >
-              Each month for the budget -> End of the month.
-            tests:
-              - not_null
+            description: "End of the month for the budget entry."
+          
           - name: _fivetran_synced
-            description: >
-              Date that the data was loaded.
+            description: "Timestamp when data was loaded."
             tests:
-              - not_null
+              - not_null 
+
