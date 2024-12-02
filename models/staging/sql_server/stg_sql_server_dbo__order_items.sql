@@ -1,7 +1,7 @@
 {{ config(materialized='incremental') }}
 
  SELECT 
-       cast( order_id as varchar(36)) ass order_id,
+       cast( order_id as varchar(36)) as order_id,
        cast( PRODUCT_ID as varchar(36)) as PRODUCT_ID,
        QUANTITY,
        CASE

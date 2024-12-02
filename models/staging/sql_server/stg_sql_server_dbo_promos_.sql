@@ -23,7 +23,7 @@ UNION ALL
 
 SELECT 
     cast(promo_surr_key as varchar(36)) as promo_id, 
-    cast(promo_desc as varchar(100)) as promo_name,
+    cast(promo_name as varchar(100)) as promo_name,
     cast(discount as number(10,2)) as discount,
     status,
     CASE

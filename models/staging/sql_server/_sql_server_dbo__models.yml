@@ -1,0 +1,334 @@
+version: 2
+
+models:
+  #ADDRESSES#
+  - name: addresses
+    description: "Modelo de direcciones con datos sincronizados desde Fivetran"
+    columns:
+      - name: ADDRESS_ID
+        description: "ID único de la dirección en formato UUID de 36 caracteres."
+        tests:
+          - not_null
+          - unique
+      - name: ZIPCODE
+        description: "Código postal de la dirección, siempre numérico."
+        tests:
+          - not_null
+          - is_positive
+      - name: COUNTRY
+        description: "País de la dirección, con un máximo de 56 caracteres."
+        tests:
+          - not_null
+      - name: ADDRESS
+        description: "Dirección completa de la ubicación."
+        tests:
+          - not_null
+      - name: STATE
+        description: "Estado o provincia de la dirección."
+        tests:
+          - not_null
+      - name: _FIVETRAN_DELETED
+        description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true,false]
+      - name: _FIVETRAN_SYNCED_UTC
+        description: "Fecha y hora en que se sincronizó la dirección en formato UTC."
+        tests:
+          - not_null
+
+    #EVENTS#
+  - name: events
+    description: "Modelo de eventos de usuarios con datos sincronizados desde Fivetran"
+    columns:
+      - name: EVENT_ID
+        description: "ID único del evento en formato UUID de 36 caracteres."
+        tests:
+          - not_null
+          - unique
+      - name: PAGE_URL
+        description: "URL de la página en la que ocurrió el evento."
+        tests:
+          - not_null
+      - name: EVENT_TYPE
+        description: "Tipo de evento registrado."
+        tests:
+          - not_null
+      - name: USER_ID
+        description: "ID único del usuario asociado al evento, en formato UUID."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('users')
+              field: USER_ID
+      - name: PRODUCT_ID
+        description: "ID único del producto relacionado con el evento, en formato UUID."
+        tests:
+          - relationships:
+              to: ref('products')
+              field: PRODUCT_ID
+      - name: SESSION_ID
+        description: "ID de la sesión en la que ocurrió el evento, en formato UUID."
+        tests:
+          - not_null
+      - name: CREATED_AT
+        description: "Fecha y hora de la creación del evento, convertida a UTC."
+        tests:
+          - not_null
+      - name: ORDER_ID
+        description: "ID de la orden asociada al evento."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('orders')
+              field: ORDER_ID
+      - name: _FIVETRAN_DELETED
+        description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true,false]
+      - name: _FIVETRAN_SYNCED_UTC
+        description: "Fecha y hora en que se sincronizó el evento en formato UTC."
+        tests:
+          - not_null
+
+    #ORDER ITEMS#
+  - name: order_items
+    description: "Modelo de artículos de pedido con datos sincronizados desde Fivetran"
+    config:
+      materialized: incremental
+    columns:
+      - name: order_id
+        description: "ID único del pedido en formato UUID de 36 caracteres."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('orders')
+              field: ORDER_ID
+      - name: PRODUCT_ID
+        description: "ID único del producto dentro del pedido, en formato UUID."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('products')
+              field: PRODUCT_ID
+      - name: QUANTITY
+        description: "Cantidad del producto en el pedido."
+        tests:
+          - not_null
+          - is_positive
+      - name: _FIVETRAN_DELETED
+        description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true,false]
+      - name: _FIVETRAN_SYNCED_UTC
+        description: "Fecha y hora en que se sincronizó el artículo del pedido en formato UTC."
+        tests:
+          - not_null
+
+  #ORDERS#
+  - name: orders
+    description: "Modelo de órdenes con datos sincronizados desde Fivetran"
+    columns:
+      - name: order_id
+        description: "ID único de la orden en formato UUID de 36 caracteres."
+        tests:
+          - not_null
+      - name: shipping_service
+        description: "Servicio de envío asociado a la orden, con valores modificados según condiciones."
+        tests:
+          - not_null
+      - name: shipping_cost
+        description: "Costo del envío de la orden."
+        tests:
+          - not_null
+          - is_positive
+      - name: address_id
+        description: "ID de la dirección de envío asociada a la orden."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('addresses')
+              field: address_id
+      - name: created_at
+        description: "Fecha y hora de la creación de la orden en formato UTC."
+        tests:
+          - not_null
+      - name: promo_id
+        description: "ID de la promoción aplicada a la orden, si existe."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('promos')
+              field: promo_name
+      - name: estimated_delivery_at
+        description: "Fecha estimada de entrega de la orden en formato UTC."
+        tests:
+          - not_null
+      - name: order_cost
+        description: "Costo total de la orden antes de impuestos y envío."
+        tests:
+          - not_null
+          - is_positive
+      - name: user_id
+        description: "ID del usuario que realizó la orden."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('users')
+              field: user_id
+      - name: order_total
+        description: "Total de la orden, incluyendo impuestos y costos."
+        tests:
+          - not_null
+          - is_positive
+      - name: delivered_at
+        description: "Fecha y hora en que se entregó la orden, en formato UTC."
+        tests:
+          - not_null
+      - name: status_order
+        description: "Estado actual de la orden."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['delivered', 'shipped', 'preparing']
+      - name: _FIVETRAN_DELETED
+        description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true,false]
+      - name: _FIVETRAN_SYNCED_UTC
+        description: "Fecha y hora en que se sincronizó la orden en formato UTC."
+        tests:
+          - not_null
+
+  #PRODUCTS#
+  - name: products
+    description: "Modelo de productos con datos sincronizados desde Fivetran"
+    config:
+      materialized: table
+    columns:
+      - name: PRODUCT_ID
+        description: "ID único del producto en formato UUID de 36 caracteres."
+        tests:
+          - not_null
+          - unique
+      - name: PRICE
+        description: "Precio del producto, con formato numérico (hasta 2 decimales)."
+        tests:
+          - not_null
+          - is_positive
+      - name: NAME
+        description: "Nombre del producto."
+        tests:
+          - not_null
+      - name: INVENTORY
+        description: "Cantidad de productos en inventario."
+        tests:
+          - not_null
+          - is_positive
+      - name: _FIVETRAN_DELETED
+        description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true,false]
+      - name: _FIVETRAN_SYNCED_UTC
+        description: "Fecha y hora en que se sincronizó el producto en formato UTC."
+        tests:
+          - not_null
+
+  #USERS#
+  - name: users
+    description: "Modelo de usuarios con datos sincronizados desde Fivetran"
+    config:
+      materialized: table
+    columns:
+      - name: user_id
+        description: "ID único del usuario en formato UUID de 36 caracteres."
+        tests:
+          - not_null
+          - unique
+      - name: UPDATED_AT
+        description: "Fecha y hora de la última actualización del usuario en formato UTC."
+        tests:
+          - not_null
+      - name: ADDRESS_ID
+        description: "ID de la dirección asociada al usuario."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('addresses')
+              field: ADDRESS_ID
+      - name: LAST_NAME
+        description: "Apellido del usuario."
+        tests:
+          - not_null
+      - name: CREATED_AT
+        description: "Fecha y hora de la creación del usuario en formato UTC."
+        tests:
+          - not_null
+      - name: PHONE_NUMBER
+        description: "Número de teléfono del usuario."
+        tests:
+          - not_null
+      - name: FIRST_NAME
+        description: "Nombre del usuario."
+        tests:
+          - not_null
+      - name: EMAIL
+        description: "Correo electrónico del usuario."
+        tests:
+          - not_null
+          - valid_email
+      - name: _FIVETRAN_DELETED
+        description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true,false]
+      - name: _FIVETRAN_SYNCED_UTC
+        description: "Fecha y hora en que se sincronizó el usuario en formato UTC."
+        tests:
+          - not_null
+
+  #PROMOS#
+  - name: promos
+    description: "Modelo de promociones, unificando las promociones existentes con la 'no promo'."
+    config:
+      materialized: table
+    columns:
+      - name: promo_id
+        description: "ID único de la promoción."
+        tests:
+          - not_null
+          - unique
+      - name: promo_name
+        description: "Nombre de la promoción."
+        tests:
+          - not_null
+      - name: discount
+        description: "Descuento de la promoción, con formato numérico (hasta 2 decimales)."
+        tests:
+          - not_null
+          - is_positive
+          # Un descuento no puede ser negativo porque luego vas a restarlo y por regla de signos estarías sumando
+      - name: status
+        description: "Estado de la promoción, por ejemplo, 'activo' o 'inactivo'."
+        tests:
+          - not_null
+      - name: _FIVETRAN_DELETED
+        description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true,false]
+      - name: _FIVETRAN_SYNCED_UTC
+        description: "Fecha y hora en que se sincronizó la promoción en formato UTC."
+        tests:
+          - not_null
