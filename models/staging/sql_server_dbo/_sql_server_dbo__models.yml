@@ -2,7 +2,7 @@ version: 2
 
 models:
   #ADDRESSES#
-  - name: addresses
+  - name: stg_sql_server_dbo__addresses
     description: "Modelo de direcciones con datos sincronizados desde Fivetran"
     columns:
       - name: ADDRESS_ID
@@ -39,7 +39,7 @@ models:
           - not_null
 
     #EVENTS#
-  - name: events
+  - name: stg_sql_server_dbo__events
     description: "Modelo de eventos de usuarios con datos sincronizados desde Fivetran"
     columns:
       - name: EVENT_ID
@@ -95,7 +95,7 @@ models:
           - not_null
 
     #ORDER ITEMS#
-  - name: order_items
+  - name: stg_sql_server_dbo__order_items
     description: "Modelo de artículos de pedido con datos sincronizados desde Fivetran"
     config:
       materialized: incremental
@@ -131,7 +131,7 @@ models:
           - not_null
 
   #ORDERS#
-  - name: orders
+  - name: stg_sql_server_dbo__orders
     description: "Modelo de órdenes con datos sincronizados desde Fivetran"
     columns:
       - name: order_id
@@ -208,7 +208,7 @@ models:
           - not_null
 
   #PRODUCTS#
-  - name: products
+  - name: stg_sql_server_dbo__products
     description: "Modelo de productos con datos sincronizados desde Fivetran"
     config:
       materialized: table
@@ -244,7 +244,7 @@ models:
           - not_null
 
   #USERS#
-  - name: users
+  - name: stg_sql_server_dbo__users
     description: "Modelo de usuarios con datos sincronizados desde Fivetran"
     config:
       materialized: table
@@ -298,7 +298,7 @@ models:
           - not_null
 
   #PROMOS#
-  - name: promos
+  - name: stg_sql_server_dbo_promos_
     description: "Modelo de promociones, unificando las promociones existentes con la 'no promo'."
     config:
       materialized: table
