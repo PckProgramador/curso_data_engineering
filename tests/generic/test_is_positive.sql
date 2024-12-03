@@ -1,11 +1,9 @@
--- tests/test_is_positive.sql
-
-{% test is_positive(column_name) %}
+{% test is_positive(model,column_name) %}
 
 with validation as (
     select
         {{ column_name }} as positive_field
-    from {{ this }}  -- 'this' hace referencia al modelo actual
+    from {{ model }}  
 ),
 
 validation_errors as (

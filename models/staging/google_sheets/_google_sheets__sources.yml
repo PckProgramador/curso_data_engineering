@@ -36,7 +36,7 @@ sources:
             description: "Cantidad procesada como entero."
         
           - name: month
-          description: "Fecha mensual en la que se hace el budget."
-          
+            description: "Fecha mensual en la que se hace el budget."
+
           - name: _fivetran_synced
             description: "Marca de tiempo sincronizada en UTC desde el proceso de Fivetran."

@@ -12,3 +12,8 @@
     FROM {{ source('sql_server_dbo', 'order_items') }} 
 
 --fivetran_deleted  borrar porque todo null
+
+{% if is_incremental() %}
+  where _FIVETRAN_SYNCED_UTC > (select max(_FIVETRAN_SYNCED_UTC) from {{ this }})
+
+{% endif %}

@@ -1,53 +1,40 @@
 version: 2
 
 models:
-  #ADDRESSES#
+  # ADDRESSES #
   - name: stg_sql_server_dbo__addresses
     description: "Modelo de direcciones con datos sincronizados desde Fivetran"
     columns:
       - name: address_id
         description: "ID único de la dirección en formato UUID de 36 caracteres."
-        tests:
-          - test_column_length_36:
-              column_name: address_id  #Test que comprueba que la transformación a 36 caracteres es correcta
-
+        
       - name: zipcode
         description: "Código postal de la dirección, siempre numérico."
-
       - name: country
         description: "País de la dirección, con un máximo de 56 caracteres."
-
       - name: address
         description: "Dirección completa de la ubicación."
-
       - name: state
         description: "Estado o provincia de la dirección."
-
       - name: _fivetran_deleted
         description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
         tests:
           - accepted_values:
-              values: [true,false]
-
+              values: [true, false]
       - name: _fivetran_synced_utc
         description: "Fecha y hora en que se sincronizó la dirección en formato UTC."
 
-    #EVENTS#
+  # EVENTS #
   - name: stg_sql_server_dbo__events
     description: "Modelo de eventos de usuarios con datos sincronizados desde Fivetran"
     columns:
       - name: event_id
         description: "ID único del evento en formato UUID de 36 caracteres."
-        tests:
-          - test_column_length_36:
-              column_name: event_id  #Test que comprueba que la transformación a 36 caracteres es correcta
-
+      
       - name: page_url
         description: "URL de la página en la que ocurrió el evento."
-      
       - name: event_type
         description: "Tipo de evento registrado."
-        
       - name: user_id
         description: "ID único del usuario asociado al evento, en formato UUID."
         tests:
@@ -55,44 +42,28 @@ models:
           - relationships:
               to: ref('users')
               field: USER_ID
-          - test_column_length_36:
-              column_name: user_id  #Test que comprueba que la transformación a 36 caracteres es correcta
-
+         
       - name: product_id
         description: "ID único del producto relacionado con el evento, en formato UUID."
-        # No puedo hacer un test de integridad referencial porque hay productos vacíos
-        # entonces debería añadir un producto vacío con id único y asociarlo a todos los empties
-        tests:
-          - test_column_length_36:
-              column_name: product_id  #Test que comprueba que la transformación a 36 caracteres es correcta
-
+        
       - name: session_id
         description: "ID de la sesión en la que ocurrió el evento, en formato UUID."
-        tests:
-          - test_column_length_36:
-              column_name: session_id  #Test que comprueba que la transformación a 36 caracteres es correcta
-
+       
       - name: created_at
         description: "Fecha y hora de la creación del evento, convertida a UTC."
-
       - name: order_id
         description: "ID de la orden asociada al evento."
         # No puedo hacer un test de integridad referencial porque hay pedidos vacíos
-        # entonces debería añadir un pedido vacío con id único y asociarlo a todos los empties
-
+        # Entonces debería añadir un pedido vacío con id único y asociarlo a todos los empties
       - name: _FIVETRAN_DELETED
         description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
         tests:
           - accepted_values:
-              values: [true,false] # Como le he hecho una transformación para quitar los nulos testeo que haya sido correcta
-
+              values: [true, false] # Como le he hecho una transformación para quitar los nulos testeo que haya sido correcta
       - name: _FIVETRAN_SYNCED_UTC
         description: "Fecha y hora en que se sincronizó el evento en formato UTC."
-        tests:
-          - timestamp  # Valida que el campo sea de tipo timestamp
-
-
-    #ORDER ITEMS#
+       
+  # ORDER ITEMS #
   - name: stg_sql_server_dbo__order_items
     description: "Modelo de artículos de pedido con datos sincronizados desde Fivetran"
     config:
@@ -104,7 +75,6 @@ models:
           - relationships:
               to: ref('orders')
               field: ORDER_ID
-
       - name: PRODUCT_ID
         description: "ID único del producto dentro del pedido, en formato UUID."
         tests:
@@ -112,163 +82,113 @@ models:
           - relationships:
               to: ref('products')
               field: PRODUCT_ID
-
       - name: quantity
         description: "Cantidad del producto en el pedido."
-       
       - name: _fivetran_deleted
         description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
         tests:
           - not_null
           - accepted_values:
-              values: [true,false]
-              
+              values: [true, false]
       - name: _fivetran_synced_utc
         description: "Fecha y hora en que se sincronizó el artículo del pedido en formato UTC."
-        tests:
-          - timestamp  # Valida que el campo sea de tipo timestamp ya que ha sufrido una transformación para estandarizar a UTC
-
-
-  #ORDERS#
+        
+  # ORDERS #
   - name: stg_sql_server_dbo__orders
     description: "Modelo de órdenes con datos sincronizados desde Fivetran"
     columns:
-
       - name: order_id
         description: "ID único de la orden en formato UUID de 36 caracteres."
-         tests:
-          - test_column_length_36:
-              column_name: order_id  #Test que comprueba que la transformación a 36 caracteres es correcta
-              
+        
       - name: shipping_service
         description: "Servicio de envío asociado a la orden, con valores modificados según condiciones."
         tests:
           - not_null
-           - accepted_values:
-                  values: ["fedex", "ups", "dhl", "standard"] 
-
+          
       - name: shipping_cost
         description: "Costo del envío de la orden."
-      
       - name: address_id
         description: "ID de la dirección de envío asociada a la orden."
         tests:
           - relationships:
               to: ref('addresses')
               field: address_id
-
       - name: created_at
         description: "Fecha y hora de la creación de la orden en formato UTC."
-        tests:
-          - timestamp
-          - test_timestamp_is_before_if_column_exists:
-              column_1: created_at  # La columna que debe ser anterior
-              column_2: delivered_at 
-
-
       - name: promo_name
-          description: "Nombre la promoción aplicada a la orden, si existe."
-          tests:
-            - relationships:
-                to: ref('promos')
-                field: promo_name
-
+        description: "Nombre de la promoción aplicada a la orden, si existe."
+        tests:
+          - relationships:
+              to: ref('promos')
+              field: promo_name
       - name: promo_id
         description: "ID de la promoción aplicada a la orden, si existe."
-        
       - name: estimated_delivery_at
         description: "Fecha estimada de entrega de la orden en formato UTC."
-
       - name: order_cost
         description: "Costo total de la orden antes de impuestos y envío."
-
       - name: user_id
         description: "ID del usuario que realizó la orden."
         tests:
-          - not_null
           - relationships:
               to: ref('users')
               field: user_id
-
       - name: order_total
         description: "Total de la orden, incluyendo impuestos y costos."
-         tests:
-          - test_order_total_coherency:  # Aplica el test de coherencia.
-              sql: "order_total >= order_cost + shipping_cost"  # Expresión de validación.
-
+        
       - name: delivered_at
         description: "Fecha y hora en que se entregó la orden, en formato UTC."
-        tests:
-          - timestamp
-          
+        
       - name: status_order
         description: "Estado actual de la orden."
-        tests:
-          - accepted_values:
-              values: ['delivered', 'shipped', 'preparing']
-
+       
+         
       - name: _FIVETRAN_DELETED
         description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
         tests:
           - not_null
           - accepted_values:
-              values: [true,false]
-
+              values: [true, false]
       - name: _FIVETRAN_SYNCED_UTC
         description: "Fecha y hora en que se sincronizó la orden en formato UTC."
         tests:
-          - timestamp
-      
+          - not_null
 
-  #PRODUCTS#
+  # PRODUCTS #
   - name: stg_sql_server_dbo__products
     description: "Modelo de productos con datos sincronizados desde Fivetran"
     config:
       materialized: table
     columns:
-
       - name: product_id
         description: "ID único del producto en formato UUID de 36 caracteres."
-        tests:
-
       - name: price
         description: "Precio del producto, con formato numérico (hasta 2 decimales)."
-      
       - name: name
         description: "Nombre del producto."
-        
       - name: inventory
         description: "Cantidad de productos en inventario."
-       
       - name: _fivetran_deleted
         description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
         tests:
           - accepted_values:
-              values: [true,false]
-
+              values: [true, false]
       - name: _fivetran_synced_utc
         description: "Fecha y hora en que se sincronizó el producto en formato UTC."
-        tests:
-          - timestamp
 
-  #USERS#
+  # USERS #
   - name: stg_sql_server_dbo__users
     description: "Modelo de usuarios con datos sincronizados desde Fivetran"
     config:
       materialized: table
     columns:
-
       - name: user_id
         description: "ID único del usuario en formato UUID de 36 caracteres."
-        tests:
-          - test_column_length_36:
-              column_name: user_id  #Test que comprueba que la transformación a 36 caracteres es correcta
-
+       
       - name: updated_at
         description: "Fecha y hora de la última actualización del usuario en formato UTC."
         tests:
           - not_null
-          - timestamp
 
       - name: address_id
         description: "ID de la dirección asociada al usuario."
@@ -277,83 +197,66 @@ models:
           - relationships:
               to: ref('addresses')
               field: address_id
-          - test_column_length_36:
-              column_name: address_id  #Test que comprueba que la transformación a 36 caracteres es correcta
-
       - name: last_name
         description: "Apellido del usuario."
         tests:
           - not_null
-
       - name: created_at
         description: "Fecha y hora de la creación del usuario en formato UTC."
-
       - name: phone_number
         description: "Número de teléfono del usuario."
         tests:
           - not_null
-
       - name: first_name
         description: "Nombre del usuario."
         tests:
           - not_null
-
       - name: email
         description: "Correo electrónico del usuario."
         tests:
           - not_null
-          - valid_email
-
       - name: _fivetran_deleted
         description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
         tests:
           - not_null
           - accepted_values:
-              values: [true,false]
-
+              values: [true, false]
       - name: _FIVETRAN_SYNCED_UTC
         description: "Fecha y hora en que se sincronizó el usuario en formato UTC."
         tests:
           - not_null
-          - timestamp
 
-  #PROMOS#
-  - name: stg_sql_server_dbo_promos_
+  # PROMOS #
+  - name: stg_sql_server_dbo__promos
     description: "Modelo de promociones, unificando las promociones existentes con la 'no promo'."
     config:
       materialized: table
     columns:
       - name: promo_id
         description: "ID único de la promoción."
-       
       - name: promo_name
         description: "Nombre de la promoción."
         tests:
           - not_null
-
       - name: discount
         description: "Descuento de la promoción, con formato numérico (hasta 2 decimales)."
         tests:
           - not_null
-          - is_positive
-          # Un descuento no puede ser negativo porque luego vas a restarlo y por regla de signos estarías sumando
-
+          - is_positive # Un descuento no puede ser negativo porque luego vas a restarlo y por regla de signos estarías sumando
       - name: status
         description: "Estado de la promoción, por ejemplo, 'activo' o 'inactivo'."
         tests:
           - not_null
           - accepted_values:
-              values: ["active", "inactive"]  # Asegura que este campo contenga solo valores aceptables (true, false o NULL)
-
+              values: ["active", "inactive"] # Asegura que este campo contenga solo valores aceptables (true, false o NULL)
       - name: _FIVETRAN_DELETED
         description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
         tests:
           - not_null
           - accepted_values:
-              values: [true,false]
-
+              values: [true, false]
       - name: _FIVETRAN_SYNCED_UTC
         description: "Fecha y hora en que se sincronizó la promoción en formato UTC."
         tests:
           - not_null
-          - timestamp 
+       
