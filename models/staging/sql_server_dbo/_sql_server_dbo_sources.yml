@@ -1,11 +1,11 @@
 version: 2
 
 sources:
-  - name: sql_server_dbo  # name of the source
+  - name: sql_server_dbo  # Nombre de la fuente
     description: >
-      Raw data for educational purposes
-    schema: sql_server_dbo  # this is the schema where our raw data lives
-    database: "{{ env_var('DBT_ENVIRONMENTS') }}_BRONZE_DB" # this is the name of our database
+      Datos en bruto para propósitos educativos
+    schema: sql_server_dbo  # Esquema donde residen los datos en bruto
+    database: "{{ env_var('DBT_ENVIRONMENTS') }}_BRONZE_DB"  # Nombre de la base de datos
 
     quoting:
       database: false
@@ -16,150 +16,321 @@ sources:
       warn_after:
         count: 24
         period: hour
+      # Descomentar el siguiente bloque si se necesitan pruebas de frescura más estrictas
       # error_after: 
       #   count: 48
       #   period: hour
-      # It makes no sense to test the freshness of test data from 25/10, as it was created solely for educational purposes
+      # Nota: No tiene sentido probar la frescura de los datos de prueba del 25/10,
+      # ya que fueron creados únicamente con fines educativos.
 
     tables:
+
+      #ADDRESSES#
       - name: addresses
         loaded_at_field: _fivetran_synced
-        description: "Unique addresses from everywhere"
+        description: "Direcciones únicas de diferentes ubicaciones"
         columns:
           - name: address_id
-            description: "Unique address id"
+            description: "Identificador único de la dirección"
             tests:
               - not_null
               - unique
+
           - name: zipcode
-            description: "Postal code"
-          - name: country
-            description: "Country where the address is located"
-          - name: address
-            description: "Name of the physical location of the address"
+            description: "Código postal"
             tests:
-              - not_null #No veo sentido que venga un address sin un campo address, debería de dar error
-          - name: state
-            description: "State where the address is located"
-          - name: _fivetran_deleted
-            description: "Fivetran data which confirms if a row has been deleted"
-          - name: _fivetran_synced
-            description: "Temporal check that indicates the last time a row has been synced"
+              - not_null
+              - is_positive:  # Llama al test personalizado
+                column_name: zipcode  # Pasa el nombre de la columna que quieres validar
+
+          - name: country
+            description: "País donde se encuentra la dirección"
             tests:
               - not_null
 
+          - name: address
+            description: "Nombre de la ubicación física de la dirección"
+            tests:
+              - not_null  # No tiene sentido que exista una dirección sin un campo "address".
+
+          - name: state
+            description: "Estado donde se encuentra la dirección"
+            tests:
+              - not_null
+
+          - name: _fivetran_deleted
+            description: "Dato de Fivetran que confirma si una fila ha sido eliminada"
+
+          - name: _fivetran_synced
+            description: "Campo temporal que indica la última vez que una fila fue sincronizada"
+            tests:
+              - timestamp  # Valida que el campo sea de tipo timestamp
+              - not_null
+
+    #EVENTS#
       - name: events
         loaded_at_field: _fivetran_synced
-        description: "Relation between web clicks and products"
+        description: "Relación entre los clics en la web y los productos"
         columns:
           - name: event_id
-            description: "Unique id from the event"
+            description: "Identificador único del evento"
             tests:
-              - not_null
-              - unique
+              - not_null  # Cada evento debe tener un ID único
+              - unique    # Asegura que no haya duplicados en los IDs de eventos
+
           - name: page_url
-            description: "URL where the event has been registered"
+            description: "URL donde se registró el evento"
+            tests:
+              - not_null  # Es importante que cada evento tenga una URL asociada
+           
           - name: event_type
-            description: "Type of event (e.g., click, visualization, etc.)"
+            description: "Tipo de evento (por ejemplo, clic, visualización, etc.)"
+            tests:
+              - not_null  # Todos los eventos deben tener un tipo definido
+              - accepted_values:
+                  values: ["checkout", "package_shipped", "add_to_cart", "page_view"]  # Valores válidos para event_type
+
           - name: user_id
-            description: "Unique id for each user"
+            description: "Identificador único de cada usuario"
+            tests:
+              - not_null  # Los eventos deben estar relacionados con un usuario
+
           - name: product_id
-            description: "Unique id for each product"
+            description: "Identificador único de cada producto"
+            - not null # Si el evento no esta producido por una página de producto lo deja vacío
+
           - name: session_id
-            description: "Unique identifier for the current session" #Puede haber varios registros de eventos en la misma sesión
+            description: "Identificador único para la sesión actual"  # Puede haber varios eventos en la misma sesión
+            tests:
+              - not_null  # Cada evento debe estar asociado con una sesión
+
           - name: created_at
-            description: "Timestamp when the event occurred"
+            description: "Marca de tiempo en la que ocurrió el evento"
             tests:
-              - not_null #Si ha pulsado un botón tiene que ser a una hora concreta
+              - not_null  # Debe tener una hora exacta asociada al evento
+              - timestamp  # Valida que el campo sea de tipo timestamp
+              - unique    # Opcional: Si cada evento registrado debe tener un único timestamp
+
           - name: order_id
-            description: "Order ID associated with the event (if applicable)"
-          - name: _fivetran_deleted
-            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
-          - name: _fivetran_synced
-            description: "Timestamp indicating the last sync with Fivetran"
+            description: "ID del pedido asociado al evento (si aplica)"
             tests:
-              - not_null
+              - not_null  # Si viene vacío es que no tiene relacionado un pedido, pero no puede venir nulo
+           
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (gestionado por Fivetran)"
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]  # Asegura que este campo contenga solo valores aceptables.
+           
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran"
+            tests:
+              - not_null  # Siempre debe estar presente la fecha de sincronización
+              - timestamp  # Valida que el campo sea de tipo timestamp
+
 
       - name: orders
         loaded_at_field: _fivetran_synced
-        description: "Table that stores information about purchase orders."
+        description: "Tabla que almacena información sobre órdenes de compra."
         columns:
           - name: order_id
-            description: "Unique order ID"
+            description: "ID único de la orden."
             tests:
-              - not_null
-              - unique
+              - not_null  # Verifica que cada orden tenga un ID único.
+              - unique    # Garantiza que no haya duplicados.
+
           - name: shipping_service
-            description: "Shipping service used for the order"
+            description: "Servicio de envío utilizado para la orden."
+            tests:
+              - not_null  # Verifica que todas las órdenes tengan un servicio de envío especificado.
+             # Los valores aceptados los testeamos en el stage ya que hay que transformar los vacíos en algo que se pueda testear
+
           - name: shipping_cost
-            description: "Shipping cost of the order"
+            description: "Costo del envío de la orden."
+            tests:
+              - not_null  # Verifica que siempre haya un costo asociado al envío.
+              - numeric  # Asegura que el costo sea un número.
+              - is_positive:  # Llama al test personalizado
+                column_name: shipping_cost  # Pasa el nombre de la columna que quieres validar
+                
           - name: address_id
-            description: "Address ID associated with the order"
+            description: "ID de la dirección asociada a la orden."
+            tests:
+              - not_null  # Verifica que todas las órdenes tengan una dirección asociada.
+
           - name: created_at
-            description: "Timestamp of when the order was created" #No puede haber un pedido sin hora
+            description: "Marca de tiempo de cuando se creó la orden."
             tests:
-              - not_null
+              - not_null  # Una orden no puede existir sin una fecha de creación.
+
           - name: promo_id
-            description: "Promo code ID used (if applicable)"
-          - name: estimated_delivery_at
-            description: "Estimated delivery date of the order"
-          - name: order_cost
-            description: "Cost of the order excluding taxes and shipping"
-          - name: user_id
-            description: "User ID who placed the order"
-          - name: order_total
-            description: "Total of the order (cost + taxes + shipping)"
-          - name: delivered_at
-            description: "Date when the order was delivered"
-          - name: tracking_id
-            description: "Shipping tracking ID"
-          - name: status
-            description: "Current order status (e.g., pending, completed, etc.)"
-          - name: _fivetran_deleted
-            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
-          - name: _fivetran_synced
-            description: "Timestamp indicating the last sync with Fivetran"
+            description: "Promoción (si aplica)."
             tests:
-              - not_null
+              - not_null # Solo puede venir vacío pero no null
+
+          - name: estimated_delivery_at
+            description: "Fecha estimada de entrega de la orden."
+
+          - name: order_cost
+            description: "Costo de la orden excluyendo impuestos y envío."
+            tests:
+              - not_null  # No debería haber una orden sin costo base.
+              - numeric  # Asegura que sea un número.
+              - is_positive:  # Llama al test personalizado
+                column_name: order_cost  # Pasa el nombre de la columna que quieres validar
+
+          - name: user_id
+            description: "ID del usuario que realizó la orden."
+            tests:
+              - not_null  # Verifica que cada orden tenga un usuario asociado.
+
+          - name: order_total
+            description: "Total de la orden (costo base + impuestos + envío)."
+            tests:
+              - not_null  # Verifica que siempre haya un total.
+              - numeric  # Asegura que el total sea un número.
+           
+          - name: delivered_at
+            description: "Fecha de entrega de la orden."
+
+          - name: tracking_id
+            description: "ID de rastreo del envío."
+
+          - name: status
+            description: "Estado actual de la orden (por ejemplo: pendiente, completado, etc.)."
+            tests:
+              - not_null  # Todas las órdenes deben tener un estado.
+
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (administrado por Fivetran)."
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]  # Asegura que este campo tenga valores esperados.
+
+        - name: _fivetran_synced
+          description: "Marca de tiempo que indica la última sincronización con Fivetran."
+          tests:
+            - not_null  # Verifica que siempre haya una marca de sincronización.
+            - timestamp  # Valida que el campo sea de tipo timestamp
 
       - name: order_items
         loaded_at_field: _fivetran_synced
-        description: "Table that stores products associated with each order."
+        description: "Tabla que almacena los productos asociados a cada orden."
         columns:
           - name: order_id
-            description: "Unique order ID"
+            description: "ID de la orden, referencia al campo order_id de la tabla source orders."
             tests:
-              - not_null
-          - name: product_id
-            description: "Unique product ID"
-            tests:
-              - not_null
-          - name: quantity
-            description: "Quantity of the product in the order"
-          - name: _fivetran_deleted
-            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
-          - name: _fivetran_synced
-            description: "Timestamp indicating the last sync with Fivetran"
-            tests:
-              - not_null
+              - not_null  # Asegura que siempre haya un ID de orden.
 
-      - name: products
-        loaded_at_field: _fivetran_synced
-        description: "Table that stores product information."
+          - name: product_id
+            description: "ID único del producto."
+            tests:
+              - not_null  # Verifica que siempre haya un ID de producto.
+
+          - name: quantity
+            description: "Cantidad del producto en la orden."
+            tests:
+              - not_null  # La cantidad no puede ser nula.
+              - is_positive:  # Llama al test personalizado
+                column_name: quantity  # Pasa el nombre de la columna que quieres validar
+                
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (administrado por Fivetran)."
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]  # Asegura que este campo contenga solo valores aceptables.
+
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran."
+            tests:
+              - not_null  # Verifica que siempre haya una marca de tiempo.
+              - timestamp  # Valida que el campo sea de tipo timestamp
+
+    
+      - name: products  # Nombre del modelo
+        description: "Tabla que almacena la información de los productos."
         columns:
           - name: product_id
-            description: "Unique product ID"
+            description: "ID único del producto"
+            tests:
+              - not_null  # Asegura que no haya valores nulos en el ID del producto
+              - unique    # Asegura que el ID del producto sea único
+
+          - name: price
+            description: "Precio del producto"
+            tests:
+              - not_null  # Asegura que no haya valores nulos en el precio
+              - is_positive:  # Llama al test personalizado
+                column_name: price  # Pasa el nombre de la columna que quieres validar
+
+          - name: name
+            description: "Nombre del producto"
+            tests:
+              - not_null  # Asegura que no haya valores nulos en el nombre
+              - unique    # Asegura que el nombre del producto sea único
+
+          - name: inventory
+            description: "Cantidad disponible en inventario para el producto"
+            tests:
+              - not_null  # Asegura que no haya valores nulos en la cantidad de inventario
+              - is_positive:  # Llama al test personalizado
+                column_name: inventory  # Pasa el nombre de la columna que quieres validar
+
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (gestionado por Fivetran)"
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]  # Asegura que este campo contenga solo valores aceptables (true, false o NULL)
+
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran"
+            tests:
+              - not_null  # Asegura que no haya valores nulos en la marca de tiempo de sincronización
+
+
+      - name: users
+        loaded_at_field: _fivetran_synced
+        description: "Table that stores information about users."
+        columns:
+
+          - name: user_id
+            description: "Unique user ID"
             tests:
               - not_null
               - unique
-          - name: price
-            description: "Price of the product"
-          - name: name
-            description: "Name of the product"
-          - name: inventory
-            description: "Available inventory quantity for the product"
+
+          - name: updated_at
+            description: "Timestamp of the last user update"
+
+          - name: address_id
+            description: "Address ID associated with the user"
+
+          - name: last_name
+            description: "User's last name"
+
+          - name: created_at
+            description: "Timestamp of when the user was created"
+            tests:
+              - not_null
+
+          - name: phone_number
+            description: "User's phone number"
+
+          - name: total_orders
+            description: "Total number of orders placed by the user"
+
+          - name: first_name
+            description: "User's first name"
+
+          - name: email
+            description: "User's email address"
+
           - name: _fivetran_deleted
             description: "Indicator of whether the row has been deleted (managed by Fivetran)"
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]  # Asegura que este campo contenga solo valores aceptables (true, false o NULL)
+
           - name: _fivetran_synced
             description: "Timestamp indicating the last sync with Fivetran"
             tests:
@@ -169,52 +340,28 @@ sources:
         loaded_at_field: _fivetran_synced
         description: "Table that stores information about promotional codes."
         columns:
+
           - name: promo_id
             description: "Unique promo code ID"
             tests:
               - not_null
               - unique
+
           - name: discount
             description: "Discount associated with the promo code"
+
           - name: status
             description: "Status of the promo code (active, inactive, etc.)"
+
           - name: _fivetran_deleted
             description: "Indicator of whether the row has been deleted (managed by Fivetran)"
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]  # Asegura que este campo contenga solo valores aceptables (true, false o NULL)
+                  
           - name: _fivetran_synced
             description: "Timestamp indicating the last sync with Fivetran"
             tests:
               - not_null
 
-      - name: users
-        loaded_at_field: _fivetran_synced
-        description: "Table that stores information about users."
-        columns:
-          - name: user_id
-            description: "Unique user ID"
-            tests:
-              - not_null
-              - unique
-          - name: updated_at
-            description: "Timestamp of the last user update"
-          - name: address_id
-            description: "Address ID associated with the user"
-          - name: last_name
-            description: "User's last name"
-          - name: created_at
-            description: "Timestamp of when the user was created"
-            tests:
-              - not_null
-          - name: phone_number
-            description: "User's phone number"
-          - name: total_orders
-            description: "Total number of orders placed by the user"
-          - name: first_name
-            description: "User's first name"
-          - name: email
-            description: "User's email address"
-          - name: _fivetran_deleted
-            description: "Indicator of whether the row has been deleted (managed by Fivetran)"
-          - name: _fivetran_synced
-            description: "Timestamp indicating the last sync with Fivetran"
-            tests:
-              - not_null
+

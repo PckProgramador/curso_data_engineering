@@ -18,7 +18,7 @@ sources:
       # error_after:
       #   count: 48
       #   period: hour
-      # Note: Freshness tests for test data may not make sense for educational/demo purposes (25/10).
+      # Note:  No merece la pena que de error porque los datos demo son sincronizados en una fecha única (25/10).
 
     tables:
       - name: budget
@@ -30,15 +30,13 @@ sources:
             description: "Row number in the Google Sheet."
 
           - name: product_id
-            description: "UUID of each unique product on the platform."
+            description: "Identificador único del producto, convertido a una cadena de 36 caracteres."
+         
           - name: quantity
-            description: "Number of units for each product per month."
-          
+            description: "Cantidad procesada como entero."
+        
           - name: month
-            description: "End of the month for the budget entry."
+          description: "Fecha mensual en la que se hace el budget."
           
           - name: _fivetran_synced
-            description: "Timestamp when data was loaded."
-            tests:
-              - not_null 
-
+            description: "Marca de tiempo sincronizada en UTC desde el proceso de Fivetran."
