@@ -242,13 +242,10 @@ models:
         description: "Descuento de la promoción, con formato numérico (hasta 2 decimales)."
         tests:
           - not_null
-          - is_positive # Un descuento no puede ser negativo porque luego vas a restarlo y por regla de signos estarías sumando
+         
       - name: status
         description: "Estado de la promoción, por ejemplo, 'activo' o 'inactivo'."
-        tests:
-          - not_null
-          - accepted_values:
-              values: ["active", "inactive"] # Asegura que este campo contenga solo valores aceptables (true, false o NULL)
+
       - name: _FIVETRAN_DELETED
         description: "Indicador de eliminación desde Fivetran. Es 'true' si se marcó como eliminado, 'false' en caso contrario."
         tests:

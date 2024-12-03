@@ -25,7 +25,7 @@ SELECT
     cast(promo_surr_key as varchar(36)) as promo_id, 
     cast(promo_name as varchar(100)) as promo_name,
     cast(discount as number(10,2)) as discount,
-    status,
+    status as status_promo,
     CASE
     WHEN _FIVETRAN_DELETED is null then false
     else true

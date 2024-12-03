@@ -1,4 +1,4 @@
-{{ config(materialized='incremental') }}
+{{ config(materialized='table') }}
 -- models/gold_sales_by_state.sql
 
 WITH sales_by_state AS (
@@ -31,8 +31,3 @@ FROM
     sales_by_state
 ORDER BY
     total_sales DESC
-{% if is_incremental() %}
-
-  where _FIVETRAN_SYNCED_UTC > (select max(_FIVETRAN_SYNCED_UTC) from {{ this }})
-
-{% endif %}
