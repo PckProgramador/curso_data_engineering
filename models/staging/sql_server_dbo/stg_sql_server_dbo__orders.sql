@@ -20,12 +20,12 @@
         cast(user_id as varchar(36)) as user_id,
         cast(order_total as number(10,2)) as order_total,
         CONVERT_TIMEZONE('UTC', delivered_at) AS delivered_at,
-        status as status_orders,
+        status as status_order,
         CASE
         WHEN _FIVETRAN_DELETED is null then false
         else true
         END as _FIVETRAN_DELETED,
-       CONVERT_TIMEZONE('UTC', _FIVETRAN_SYNCED) AS _FIVETRAN_SYNsED_UTC
+       CONVERT_TIMEZONE('UTC', _FIVETRAN_SYNCED) AS _FIVETRAN_SYNCED_UTC
      FROM {{ source('sql_server_dbo', 'orders') }} a 
 
 {% if is_incremental() %}

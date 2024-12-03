@@ -7,7 +7,7 @@ WITH t1 as(
 UNION ALL
     SELECT
     'no promo' AS promo_id, 
-    '0' AS discount,
+    0 AS discount,
     'inactivo' AS status,
     NULL AS _fivetran_deleted, 
     CURRENT_TIMESTAMP AS _fivetran_synced 
