@@ -1,5 +1,4 @@
 {{ config(materialized='table') }}
--- models/gold_sales_by_state.sql
 
 WITH sales_by_state AS (
     SELECT
