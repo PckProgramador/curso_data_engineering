@@ -30,34 +30,29 @@ clean-targets:
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   # Global model configurations
-  +transient: false  # Ensure models are not transient by default
+  +transient: false # Ensure models are not transient by default
 
   # Configuration for your project models
   my_new_project:
-    
     # Staging models configuration
     staging:
-      +database: "{{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB"  # Use environment variable for dynamic database naming
+      +database: "{{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB" # Use environment variable for dynamic database naming
       google_sheets:
-        +schema: google_sheets  # Schema for google_sheets source
+        +schema: google_sheets # Schema for google_sheets source
       sql_server_dbo:
-        +schema: sql_server_dbo  # Schema for sql_server_dbo source
+        +schema: sql_server_dbo # Schema for sql_server_dbo source
 
     # Marts models configuration
     marts:
-      +database: "{{ env_var('DBT_ENVIRONMENTS') }}_GOLD_DB"  # Dynamic database name for marts
+      +database: "{{ env_var('DBT_ENVIRONMENTS') }}_GOLD_DB" # Dynamic database name for marts
       core:
-        +schema: core  # Core schema for marts models
+        +schema: core # Core schema for marts models
       marketing:
         +schema: marketing
 
-# Seeds configuration
-seeds:
-  +schema: seed_data  # Schema for seeds
-  +database: "{{ env_var('DBT_ENVIRONMENTS') }}_BRONZE_DB"  # Use environment variable for dynamic seed database
 
 # Snapshots configuration
 snapshots:
-  +transient: false  # Ensure snapshots are not transient
-  +target_database: "{{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB"  # Target database for snapshots
-  +target_schema: snapshots  # Target schema for snapshots
+  +transient: false # Ensure snapshots are not transient
+  +target_database: "{{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB" # Target database for snapshots
+  +target_schema: snapshots # Target schema for snapshots
