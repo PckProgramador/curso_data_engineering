@@ -1,16 +1,15 @@
-{% test is_positive(model, column_name) %}
+{% test is_positive(model,column_name) %}
 
 with validation as (
     select
         {{ column_name }} as positive_field
-    from {{ model }}
+    from {{ model }}  
 ),
 
 validation_errors as (
     select
         positive_field
     from validation
-    -- si esto es cierto, el campo es negativo o cero, no positivo
     where positive_field <= 0
 )
 

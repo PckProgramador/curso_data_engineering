@@ -1,0 +1,294 @@
+version: 2
+
+sources:
+  - name: sql_server_dbo  # Nombre de la fuente
+    description: >
+      Datos en bruto para propósitos educativos
+    schema: sql_server_dbo  # Esquema donde residen los datos en bruto
+    database: "{{ env_var('DBT_ENVIRONMENTS') }}_BRONZE_DB"  # Nombre de la base de datos
+    freshness:
+      warn_after:
+        count: 24
+        period: hour
+      # Descomentar el siguiente bloque si se necesitan pruebas de frescura más estrictas
+      error_after:
+        count: 48
+        period: hour
+    tables:
+      # ADDRESSES
+      - name: addresses
+        loaded_at_field: _fivetran_synced
+        description: "Direcciones únicas de diferentes ubicaciones"
+        columns:
+          - name: address_id
+            description: "Identificador único de la dirección"
+            tests:
+              - not_null
+              - unique
+          - name: zipcode
+            description: "Código postal"
+            tests:
+              - not_null
+              - is_positive:
+                  column_name: zipcode
+          - name: country
+            description: "País donde se encuentra la dirección"
+            tests:
+              - not_null
+          - name: address
+            description: "Nombre de la ubicación física de la dirección"
+            tests:
+              - not_null
+          - name: state
+            description: "Estado donde se encuentra la dirección"
+            tests:
+              - not_null
+          - name: _fivetran_deleted
+            description: "Dato de Fivetran que confirma si una fila ha sido eliminada"
+          - name: _fivetran_synced
+            description: "Campo temporal que indica la última vez que una fila fue sincronizada"
+            tests:
+              - not_null
+
+      # EVENTS
+      - name: events
+        loaded_at_field: _fivetran_synced
+        description: "Relación entre los clics en la web y los productos"
+        columns:
+          - name: event_id
+            description: "Identificador único del evento"
+            tests:
+              - not_null
+              - unique
+          - name: page_url
+            description: "URL donde se registró el evento"
+            tests:
+              - not_null
+          - name: event_type
+            description: "Tipo de evento (por ejemplo, clic, visualización, etc.)"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["checkout", "package_shipped", "add_to_cart", "page_view"]
+          - name: user_id
+            description: "Identificador único de cada usuario"
+            tests:
+              - not_null
+          - name: product_id
+            description: "Identificador único de cada producto"
+            tests:
+              - not_null
+          - name: session_id
+            description: "Identificador único para la sesión actual"
+            tests:
+              - not_null
+          - name: created_at
+            description: "Marca de tiempo en la que ocurrió el evento"
+            tests:
+              - not_null
+    
+          - name: order_id
+            description: "ID del pedido asociado al evento (si aplica)"
+            tests:
+              - not_null
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (gestionado por Fivetran)"
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran"
+            tests:
+              - not_null
+
+      # ORDERS
+      - name: orders
+        loaded_at_field: _fivetran_synced
+        description: "Tabla que almacena información sobre órdenes de compra."
+        columns:
+          - name: order_id
+            description: "ID único de la orden."
+            tests:
+              - not_null
+              - unique
+          - name: shipping_service
+            description: "Servicio de envío utilizado para la orden."
+            tests:
+              - not_null
+          - name: shipping_cost
+            description: "Costo del envío de la orden."
+            tests:
+              - not_null
+              - is_positive:
+                  column_name: shipping_cost
+          - name: address_id
+            description: "ID de la dirección asociada a la orden."
+            
+          - name: created_at
+            description: "Marca de tiempo de cuando se creó la orden."
+            tests:
+              - not_null
+
+          - name: promo_id
+            description: "Promoción (si aplica)."
+            
+          - name: estimated_delivery_at
+            description: "Fecha estimada de entrega de la orden."
+          - name: order_cost
+            description: "Costo de la orden excluyendo impuestos y envío."
+            tests:
+              - not_null
+              - is_positive:
+                  column_name: order_cost
+
+          - name: user_id
+            description: "ID del usuario que realizó la orden."
+            
+          - name: order_total
+            description: "Total de la orden (costo base + impuestos + envío)."
+            tests:
+              - not_null
+
+          - name: delivered_at
+            description: "Fecha de entrega de la orden."
+          - name: tracking_id
+            description: "ID de rastreo del envío."
+          - name: status
+            description: "Estado actual de la orden."
+            tests:
+              - not_null
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (gestionado por Fivetran)."
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran."
+            tests:
+              - not_null
+
+      # ORDER_ITEMS
+      - name: order_items
+        loaded_at_field: _fivetran_synced
+        description: "Tabla que almacena los productos asociados a cada orden."
+        columns:
+          - name: order_id
+            description: "ID de la orden, referencia al campo order_id de la tabla source orders."
+            tests:
+              - not_null
+          - name: product_id
+            description: "ID único del producto."
+            tests:
+              - not_null
+          - name: quantity
+            description: "Cantidad del producto en la orden."
+            tests:
+              - not_null
+              - is_positive:
+                  column_name: quantity
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (gestionado por Fivetran)."
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran."
+            tests:
+              - not_null
+
+      # PRODUCTS
+      - name: products
+        description: "Tabla que almacena la información de los productos."
+        columns:
+          - name: product_id
+            description: "ID único del producto"
+            tests:
+              - not_null
+              - unique
+          - name: price
+            description: "Precio del producto"
+            tests:
+              - not_null
+              - is_positive:
+                  column_name: price
+          - name: name
+            description: "Nombre del producto"
+            tests:
+              - not_null
+              - unique
+          - name: inventory
+            description: "Cantidad disponible en inventario para el producto"
+            tests:
+              - not_null
+              - is_positive:
+                  column_name: inventory
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (gestionado por Fivetran)"
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran"
+            tests:
+              - not_null
+
+      # USERS
+      - name: users
+        loaded_at_field: _fivetran_synced
+        description: "Tabla que almacena información sobre usuarios."
+        columns:
+          - name: user_id
+            description: "ID único del usuario"
+            tests:
+              - not_null
+              - unique
+          - name: updated_at
+            description: "Marca de tiempo de la última actualización del usuario."
+          - name: address_id
+            description: "ID de la dirección asociada con el usuario."
+          - name: last_name
+            description: "Apellido del usuario."
+          - name: created_at
+            description: "Fecha de creación del usuario."
+            tests:
+              - not_null
+          - name: phone_number
+            description: "Número de teléfono del usuario."
+          - name: total_orders
+            description: "Número total de pedidos del usuario."
+          - name: first_name
+            description: "Nombre del usuario."
+          - name: email
+            description: "Correo electrónico del usuario."
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (gestionado por Fivetran)."
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran."
+            tests:
+              - not_null
+
+      - name: promos
+        loaded_at_field: _fivetran_synced
+        description: "Tabla que almacena información sobre códigos promocionales."
+        columns:
+          - name: promo_id
+            description: "Identificador promo_id"
+            tests:
+              - not_null
+              - unique
+          - name: discount
+            description: "Descuento asociado"
+          - name: status
+            description: "Estado de la promo (activo, inactivo, etc.)"
+          - name: _fivetran_deleted
+            description: "Indicador de si la fila ha sido eliminada (gestionado por Fivetran)"
+            tests:
+              - accepted_values:
+                  values: [true, false, NULL]
+          - name: _fivetran_synced
+            description: "Marca de tiempo que indica la última sincronización con Fivetran"
+            tests:
+              - not_null

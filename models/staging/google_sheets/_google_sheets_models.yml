@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: stg_google_sheets_budget
+    description: "Modelo de stage que procesa datos provenientes de la hoja de cálculo de Google Sheets."
+    columns:
+      - name: quantity
+        description: "Cantidad procesada como entero."
+        tests:
+          - not_null
+
+      - name: month
+        description: "Mes extraído del campo `month` en el formato numérico."
+        tests:
+          - not_null
+      - name: year
+        description: "Año extraído del campo `month`."
+        tests:
+          - not_null
+         
+      - name: product_id
+        description: "Identificador único del producto, convertido a una cadena de 36 caracteres."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_sql_server_dbo__products')
+              field: product_id
+      - name: _FIVETRAN_SYNCED_UTC
+        description: "Marca de tiempo sincronizada en UTC desde el proceso de Fivetran."
+        tests:
+          - not_null

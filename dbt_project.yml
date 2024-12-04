@@ -48,6 +48,8 @@ models:
       +database: "{{ env_var('DBT_ENVIRONMENTS') }}_GOLD_DB"  # Dynamic database name for marts
       core:
         +schema: core  # Core schema for marts models
+      marketing:
+        +schema: marketing
 
 # Seeds configuration
 seeds:

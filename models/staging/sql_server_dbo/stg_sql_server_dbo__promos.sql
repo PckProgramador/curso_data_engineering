@@ -7,7 +7,7 @@ WITH t1 as(
 UNION ALL
     SELECT
     'no promo' AS promo_id, 
-    '0' AS discount,
+    0 AS discount,
     'inactivo' AS status,
     NULL AS _fivetran_deleted, 
     CURRENT_TIMESTAMP AS _fivetran_synced 
@@ -25,7 +25,7 @@ SELECT
     cast(promo_surr_key as varchar(36)) as promo_id, 
     cast(promo_name as varchar(100)) as promo_name,
     cast(discount as number(10,2)) as discount,
-    status,
+    status as status_promo,
     CASE
     WHEN _FIVETRAN_DELETED is null then false
     else true
